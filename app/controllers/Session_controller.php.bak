@@ -1,0 +1,73 @@
+<?php
+
+/*
+ * Session controller functions
+ */
+
+class Session_controller
+{
+    public $session_model;
+    public $app;
+
+    function __construct($app) {
+
+    	$this->session_model = new Session($app);
+    	$this->app = $app
+	$this->logger = new SimpleLogger();
+    }
+
+    public function validateSession() {
+
+        $token = $this->session_model->validate_token();
+        if($token !== false) {
+
+            echo $token;
+        }
+        else {
+
+            echo "invalid";
+        }
+        
+    }
+
+    public function authenticateLogin() {
+
+        // Get creds from POST
+        //$username = trim($this->app->request->post('username'));
+        //$password = trim($this->app->request->post('password'));
+	$username = "test";
+        $password = "test";
+	//	$this->logger->log("C: authLogin() post values rx" . print_r($this->app->request->post('username'),1) . " " . print_r($this->app->request->post('password'),1));		
+        // Sanitize data
+        //$username = htmlspecialchars($username, ENT_QUOTES);
+        //$password = htmlspecialchars($password, ENT_QUOTES);
+		
+        if($this->session_model->ldap_authenticate($username,$password)) {
+
+            $id = $this->session_model->ir_authenticate($username);
+            if($id !== false) {
+                
+                $profileArr = $this->session_model->get_user_profile($id);
+                
+                // Build return array
+                $auth = array();
+                $auth['token'] = $this->session_model->create_user_token($id);
+                $auth['profile'] = $profileArr ;
+                $auth['status'] = "success";
+                //$auth['data'] = array("test");
+                //echo json_encode($auth);
+            }
+            else {
+
+                //echo "invalid";
+                $auth['status'] = "error";
+            }
+        } 
+        else {
+
+            //echo "invalid";
+            $auth['status'] = "error";
+        }
+        echo json_encode($auth);
+    }
+}
